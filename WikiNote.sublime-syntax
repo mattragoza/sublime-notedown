@@ -1,17 +1,22 @@
 %YAML 1.2
 ---
 # http://www.sublimetext.com/docs/3/syntax.html
-name: Markdown
+name: WikiNote
 file_extensions:
   - md
   - mdown
   - markdown
   - markdn
-scope: text.html.markdown
+scope: text.html.markdown-wiki
 comment: |-
-  this definition aims to meet CommonMark specifications http://spec.commonmark.org/
-  with GitHub Formatted Markdown extensions              https://github.github.com/gfm/
-  and has a few extras like Markdown Extra's footnotes   https://michelf.ca/projects/php-markdown/extra/#footnotes
+  this definition aims to meet CommonMark specifications
+    http://spec.commonmark.org/
+  with GitHub Formatted Markdown extensions
+    https://github.github.com/gfm/
+  and has a few extras like Markdown Extra's footnotes
+    https://michelf.ca/projects/php-markdown/extra/#footnotes
+  as well as Wikipedia-style internal links
+    https://en.wikipedia.org/wiki/Help:Link
   the scope suffix should indicate which flavor of Markdown the feature came from, to help make this syntax definition easier to maintain
 variables:
     thematic_break: |-
@@ -762,6 +767,7 @@ contexts:
     - include: autolink-inet
     - include: autolink-email
     - include: image-ref
+    - include: link-wiki
     - include: link-ref-literal
     - include: link-ref
     - include: link-ref-footnote
@@ -931,6 +937,14 @@ contexts:
     - match: \]
       scope: meta.link.inline.markdown punctuation.definition.link.end.markdown
       pop: true
+  link-wiki:
+    - meta_scope: meta.link.wiki.markdown-wiki
+    - match: '(\[\[)([^\]]*)(\]\])'
+      captures:
+        1: punctuation.definition.wikilink.begin.markdown-wiki
+        2: constant.other.wikilink.markdown-wiki
+        3: punctuation.definition.wikilink.end.markdown-wiki
+      pop: True
   link-ref:
     - match: |-
         (?x:
