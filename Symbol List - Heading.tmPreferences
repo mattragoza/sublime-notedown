@@ -5,23 +5,15 @@
 	<key>name</key>
 	<string>Symbol List: Heading</string>
 	<key>scope</key>
-	<string>text.html.markdown-wiki markup.heading.1</string>
+	<string>
+		text.html.markdown-wiki markup.heading.1 entity.name.section
+	</string>
 	<key>settings</key>
 	<dict>
 		<key>showInSymbolList</key>
 		<integer>1</integer>
-		<key>symbolTransformation</key>
-		<string>
-			s/\s*#+\s*//g;
-		</string>
 		<key>showInIndexedSymbolList</key>
 		<integer>1</integer>
-		<key>symbolIndexTransformation</key>
-		<string>
-			s/\s*#+\s*//g;
-		</string>
 	</dict>
-	<key>uuid</key>
-	<string>C02A37C1-E770-472F-A13E-358FF0C6AD89</string>
 </dict>
 </plist>

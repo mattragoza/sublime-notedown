@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>name</key>
-	<string>Symbol List: Hide</string>
+	<string>Symbol List: Quote</string>
 	<key>scope</key>
-	<string>text.html.markdown-wiki markup.raw.code-fence.markdown-gfm, text.html.markdown-wiki markup.quote.markdown</string>
+	<string>
+		text.html.markdown-wiki markup.quote.markdown
+	</string>
 	<key>settings</key>
 	<dict>
 		<key>showInSymbolList</key>
