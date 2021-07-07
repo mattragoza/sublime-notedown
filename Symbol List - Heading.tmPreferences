@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Symbol List: Heading</string>
+	<key>scope</key>
+	<string>text.html.markdown-wiki markup.heading.1</string>
+	<key>settings</key>
+	<dict>
+		<key>showInSymbolList</key>
+		<integer>1</integer>
+		<key>symbolTransformation</key>
+		<string>
+			s/\s*#+\s*//g;
+		</string>
+		<key>showInIndexedSymbolList</key>
+		<integer>1</integer>
+		<key>symbolIndexTransformation</key>
+		<string>
+			s/\s*#+\s*//g;
+		</string>
+	</dict>
+	<key>uuid</key>
+	<string>C02A37C1-E770-472F-A13E-358FF0C6AD89</string>
+</dict>
+</plist>
