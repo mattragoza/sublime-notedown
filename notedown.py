@@ -230,6 +230,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
         try:
             os.rename(old_filename, new_filename)
 
+
         except OSError as exp:
             sublime.error_message('Could not rename {}:\n\n{}'
                                   .format(old_filename, exp))
@@ -239,8 +240,12 @@ class NotedownEventListener(sublime_plugin.EventListener):
         while view.is_loading():
             pass
 
+        curr_dir = os.path.dirname(new_filename)
+        home_dir = _find_home_dir(curr_dir)
+        if home_dir in _notes_cache:
+            del _notes_cache[home_dir]
         updated = self._update_backlinks(old_name, new_name, encoding,
-                                         os.path.dirname(new_filename))
+                                         home_dir)
         view.window().status_message('Updated backlinks to {} note(s)'
                                      .format(updated))
 
@@ -259,7 +264,9 @@ class NotedownEventListener(sublime_plugin.EventListener):
         """
         removed = set(_titles(old_name)) - set(_titles(new_name))
         if not removed:
+            print('nothing removed')
             return  # Nothing to do
+        print('trying to update backlinks')
 
         pattern = re.compile(r'\[\[({})\]\]'.format('|'.join(removed)),
                              re.IGNORECASE)
@@ -268,9 +275,10 @@ class NotedownEventListener(sublime_plugin.EventListener):
                                                           new_name))
 
         updated = 0
-        filenames = {os.path.join(notes_dir, filename)
-                     for l in _find_notes(notes_dir).values()
-                     for _, filename in l}
+        filenames = {filename
+                     for notes in _find_notes(notes_dir).values()
+                     for title, filename in notes}
+
         for filename in filenames:
             with open(filename, encoding=encoding) as fileobj:
                 try:
@@ -280,6 +288,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
                     continue
 
             if count:
+                print(filename, count)
                 updated += 1
                 _debug_log('updating {} back link(s) in {}'
                            .format(count, filename))
@@ -299,6 +308,11 @@ def _note_title(view):
     if not view.match_selector(0, 'markup.heading.1.markdown'):
         return None
     return view.substr(view.line(0))[2:].strip()
+
+
+def _find_home_dir_for_view(view):
+    curr_dir = os.path.dirname(view.file_name())
+    return _find_home_dir(curr_dir)
 
 
 def _find_home_dir(curr_dir):
@@ -418,7 +432,7 @@ def _viewing_a_note(view):
                          '[str, ...]')
         return False
 
-    note_folder = os.path.basename(os.path.dirname(view.file_name()))
+    note_folder = _find_notes_for_view(view)
     return any(fnmatch.fnmatch(note_folder, x) for x in note_folder_patterns)
 
 
