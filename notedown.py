@@ -26,6 +26,8 @@ See also:
 - [[{}]]
 """
 
+_HOME_FILE_BASE = 'HOME.md'
+
 
 def _log_duration(f):
     """Decorator for logging the duration of a function call."""
@@ -149,7 +151,7 @@ class NotedownLintCommand(_NotedownTextCommand):
 
 
 class NotedownLinkCommand(_NotedownTextCommand):
-    """Command to add a note link at the cusror."""
+    """Command to add a note link at the cursor."""
 
     def run(self, edit):
         file_name = self.view.file_name()
@@ -227,6 +229,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
 
         try:
             os.rename(old_filename, new_filename)
+
         except OSError as exp:
             sublime.error_message('Could not rename {}:\n\n{}'
                                   .format(old_filename, exp))
@@ -298,14 +301,28 @@ def _note_title(view):
     return view.substr(view.line(0))[2:].strip()
 
 
+def _find_home_dir(curr_dir):
+    home_file = os.path.join(curr_dir, _HOME_FILE_BASE)
+    if os.path.isfile(home_file):
+        return curr_dir
+    parent_dir = os.path.dirname(curr_dir)
+    if parent_dir != curr_dir:
+        return _find_home_dir(parent_dir)
+
+
 def _find_notes_for_view(view):
-    return _find_notes(os.path.dirname(view.file_name()))
+    curr_dir = os.path.dirname(view.file_name())
+    home_dir = _find_home_dir(curr_dir)
+    if home_dir:
+        return _find_notes(home_dir)
+    else:
+        return _find_notes(curr_dir)
 
 
 @_log_duration
 def _find_notes(directory):
     """Returns a {<lowercase title>: [(<title>, <filename>)]} dict describing
-    the notes in directory.
+    the notes in directory (and all subdirectories).
 
     Results are cached in _notes_cache.
     """
@@ -314,16 +331,18 @@ def _find_notes(directory):
         return notes
 
     notes = {}
-    for name in os.listdir(directory):
-        base, ext = os.path.splitext(name)
-        if ext not in _MARKDOWN_EXTENSIONS:
-            continue
-        for title in _titles(base):
-            lower_title = title.lower()
-            if lower_title in notes:
-                notes[lower_title].append((title, name))
-            else:
-                notes[lower_title] = [(title, name)]
+    for dir_, sub_dirs, files in os.walk(directory):
+        for base in files:
+            name, ext = os.path.splitext(base)
+            file_ = os.path.join(dir_, base)
+            if ext not in _MARKDOWN_EXTENSIONS:
+                continue
+            for title in _titles(name):
+                lower_title = title.lower()
+                if lower_title in notes:
+                    notes[lower_title].append((title, file_))
+                else:
+                    notes[lower_title] = [(title, file_)]
 
     _notes_cache[directory] = os.stat(directory).st_mtime, notes
     return notes
@@ -388,7 +407,7 @@ def _titles(name):
 
 
 def _viewing_a_note(view):
-    if not view.match_selector(0, 'text.html.markdown'):
+    if not view.match_selector(0, 'text.html.markdown-wiki'):
         return False
 
     note_folder_patterns = _setting('note_folder_patterns', list)
