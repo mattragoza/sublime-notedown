@@ -1,0 +1,10 @@
+[
+    {
+        "caption": "Open link",
+        "command": "notedown_open"
+    },
+    {
+        "caption": "Open journal",
+        "command": "notedown_open_journal"
+    }
+]

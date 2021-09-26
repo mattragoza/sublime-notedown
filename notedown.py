@@ -6,6 +6,7 @@ import re
 import sys
 import timeit
 import webbrowser
+import datetime as dt
 
 import sublime
 import sublime_plugin
@@ -20,10 +21,8 @@ _TITLE_SEP = '~'
 
 _NOTE_TEMPLATE = """\
 # {}
+[[{}]]
 
-See also:
-
-- [[{}]]
 """
 
 _HOME_FILE_BASE = 'HOME.md'
@@ -48,6 +47,14 @@ class _NotedownTextCommand(sublime_plugin.TextCommand):
 
     def is_visible(self):
         return _viewing_a_note(self.view)
+
+
+class NotedownOpenJournalCommand(NotedownOpenCommand):
+
+    def run(self, edit):
+        self._notes = _find_notes_for_view(self.view)
+        title = dt.datetime.today().strftime('%Y-%m-%d')
+        self._open_note(title)
 
 
 class NotedownOpenCommand(_NotedownTextCommand):

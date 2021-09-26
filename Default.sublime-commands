@@ -4,6 +4,10 @@
         "command": "notedown_open"
     },
     {
+        "caption": "Notedown: Open Journal",
+        "command": "notedown_open_journal"
+    },
+    {
         "caption": "Notedown: Link",
         "command": "notedown_link"
     },
