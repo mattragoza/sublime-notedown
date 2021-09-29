@@ -6,5 +6,9 @@
     {
         "caption": "Open journal",
         "command": "notedown_open_journal"
+    },
+    {
+        "caption": "Clear cache",
+        "command": "notedown_clear_cache"
     }
 ]

@@ -49,14 +49,6 @@ class _NotedownTextCommand(sublime_plugin.TextCommand):
         return _viewing_a_note(self.view)
 
 
-class NotedownOpenJournalCommand(NotedownOpenCommand):
-
-    def run(self, edit):
-        self._notes = _find_notes_for_view(self.view)
-        title = dt.datetime.today().strftime('%Y-%m-%d')
-        self._open_note(title)
-
-
 class NotedownOpenCommand(_NotedownTextCommand):
 
     def run(self, edit):
@@ -108,6 +100,14 @@ class NotedownOpenCommand(_NotedownTextCommand):
         return self.view.substr(self.view.word(point))
 
 
+class NotedownOpenJournalCommand(NotedownOpenCommand):
+
+    def run(self, edit):
+        self._notes = _find_notes_for_view(self.view)
+        title = dt.datetime.today().strftime('%Y-%m-%d')
+        self._open_note(title)
+
+
 class NotedownLintCommand(_NotedownTextCommand):
 
     def run(self, edit):
@@ -155,6 +155,19 @@ class NotedownLintCommand(_NotedownTextCommand):
         row, _ = self.view.rowcol(region.begin())
         text = self.view.substr(region)
         return [description, 'Line {}: {}'.format(row + 1, text)]
+
+
+class NotedownClearCacheCommand(NotedownLintCommand):
+
+    def run(self, edit):
+        self.clear_cache()
+        super().run(edit)
+
+    def clear_cache(self):
+        global _notes_cache
+        global _link_regions_cache
+        _notes_cache = {}
+        _link_regions_cache = {}
 
 
 class NotedownLinkCommand(_NotedownTextCommand):
