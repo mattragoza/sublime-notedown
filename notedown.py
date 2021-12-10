@@ -91,7 +91,12 @@ class NotedownOpenCommand(_NotedownTextCommand):
             self._open_file(filenames.pop())
 
     def _open_file(self, filename):
-        self.view.window().open_file(filename)
+        flags = (
+            sublime.SEMI_TRANSIENT |
+            sublime.ADD_TO_SELECTION |
+            sublime.REPLACE_MRU
+        )
+        self.view.window().open_file(filename, flags)
 
     def _title_at_point(self, point):
         for region in self._link_regions:
@@ -106,6 +111,36 @@ class NotedownOpenJournalCommand(NotedownOpenCommand):
         self._notes = _find_notes_for_view(self.view)
         title = dt.datetime.today().strftime('%Y-%m-%d')
         self._open_note(title)
+
+
+class NotedownConvertLinksCommand(NotedownOpenCommand):
+
+    def run(self, edit):
+        print('converting links')
+        self._notes = _find_notes_for_view(self.view)
+        for k, v in self._notes.items():
+            self.convert_links(v[0][1])
+        print('done')
+
+    def convert_links(self, note_file):
+        print('note:', note_file)
+        with open(note_file, encoding='utf-8') as f:
+            buf = f.read()
+        curr_dir = os.path.dirname(note_file)
+        f = lambda m: self.convert_link(m, curr_dir)
+        buf = re.sub(r'\[\[(.+?)\]\]', f, buf)
+        with open(note_file, 'w', encoding='utf-8') as f:
+            f.write(buf)
+
+    def convert_link(self, m, curr_dir):
+        name = m.group(1)
+        try:
+            abs_file = self._notes[name.lower()][0][1]
+            rel_file = os.path.relpath(abs_file, curr_dir)
+            rel_file = rel_file.replace(os.sep, '/')
+            return '[{}]({})'.format(name, rel_file)
+        except KeyError:
+            return m.group()
 
 
 class NotedownLintCommand(_NotedownTextCommand):

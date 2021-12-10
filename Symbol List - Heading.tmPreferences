@@ -6,7 +6,7 @@
 	<string>Symbol List: Heading</string>
 	<key>scope</key>
 	<string>
-		text.html.markdown-wiki markup.heading.1 entity.name.section
+		text.html.markdown-wiki markup.heading entity.name.section
 	</string>
 	<key>settings</key>
 	<dict>

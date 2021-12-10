@@ -10,5 +10,9 @@
     {
         "caption": "Clear cache",
         "command": "notedown_clear_cache"
+    },
+    {
+        "caption": "Convert links",
+        "command": "notedown_convert_links"
     }
 ]
