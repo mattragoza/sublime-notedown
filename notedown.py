@@ -113,10 +113,37 @@ class NotedownOpenJournalCommand(NotedownOpenCommand):
         self._open_note(title)
 
 
-class NotedownConvertLinksCommand(NotedownOpenCommand):
+class NotedownConvertFileLinksCommand(_NotedownTextCommand):
 
     def run(self, edit):
-        print('converting links')
+        print('converting file links')
+        self._notes = _find_notes_for_view(self.view)
+        for k, v in self._notes.items():
+            self.convert_links(v[0][1])
+        print('done')
+
+    def convert_links(self, note_file):
+        print('note:', note_file)
+        with open(note_file, encoding='utf-8') as f:
+            buf = f.read()
+        f = self.convert_link
+        buf = re.sub(r'\[(.+?)\]\((.+?)\)', f, buf)
+        with open(note_file, 'w', encoding='utf-8') as f:
+            f.write(buf)
+
+    def convert_link(self, m):
+        name = m.group(1)
+        try:
+            self._notes[name.lower()]
+            return '[[{}]]'.format(name)
+        except KeyError:
+            return m.group()
+
+
+class NotedownConvertWikiLinksCommand(_NotedownTextCommand):
+
+    def run(self, edit):
+        print('converting wiki links')
         self._notes = _find_notes_for_view(self.view)
         for k, v in self._notes.items():
             self.convert_links(v[0][1])

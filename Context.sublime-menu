@@ -12,7 +12,11 @@
         "command": "notedown_clear_cache"
     },
     {
-        "caption": "Convert links",
-        "command": "notedown_convert_links"
+        "caption": "Convert wiki links",
+        "command": "notedown_convert_wiki_links"
+    },
+    {
+        "caption": "Convert file links",
+        "command": "notedown_convert_file_links"
     }
 ]
