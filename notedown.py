@@ -26,6 +26,7 @@ _NOTE_TEMPLATE = """\
 """
 
 _HOME_FILE_BASE = 'HOME.md'
+_BACKLINK = None
 
 
 def _log_duration(f):
@@ -47,6 +48,28 @@ class _NotedownTextCommand(sublime_plugin.TextCommand):
 
     def is_visible(self):
         return _viewing_a_note(self.view)
+
+
+class NotedownPasteBackLinkCommand(_NotedownTextCommand):
+
+    def is_enabled(self):
+        return super().is_enabled() and (_BACKLINK is not None)
+
+    def run(self, edit):
+        for selection in self.view.sel():
+            if selection.empty():
+                self._paste_point(selection.begin())
+            else:
+                self._paste_selection(self.view.substr(selection))
+
+    def _paste_point(self, point):
+        print('paste_point', point, _BACKLINK)
+        self.view.run_command(
+            'insert', {'characters': '[[{}]]'.format(_BACKLINK)}
+        )
+
+    def _paste_selection(self, text):
+        print('paste_selection', text, _BACKLINK)
 
 
 class NotedownOpenCommand(_NotedownTextCommand):
@@ -89,6 +112,12 @@ class NotedownOpenCommand(_NotedownTextCommand):
             self.view.window().show_quick_panel(filenames, on_done)
         else:
             self._open_file(filenames.pop())
+
+        # store the backlink
+        global _BACKLINK
+        curr_file = self.view.file_name()
+        curr_name = os.path.splitext(os.path.basename(curr_file))[0]
+        _BACKLINK = curr_name
 
     def _open_file(self, filename):
         flags = (

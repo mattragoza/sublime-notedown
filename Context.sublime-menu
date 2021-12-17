@@ -8,6 +8,10 @@
         "command": "notedown_open_journal"
     },
     {
+        "caption": "Paste backlink",
+        "command": "notedown_paste_back_link"
+    },
+    {
         "caption": "Clear cache",
         "command": "notedown_clear_cache"
     },
