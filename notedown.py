@@ -7,9 +7,20 @@ import sys
 import timeit
 import webbrowser
 import datetime as dt
+from collections import defaultdict
 
 import sublime
 import sublime_plugin
+
+try:
+    sys.path.append(
+        'C:\\Users\\mtr22\\Code\\Miniconda3\\envs\\sublime\\lib\\site-packages'
+    )
+    import numpy as np
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.metrics.pairwise import linear_kernel
+except ImportError as e:
+    print(e, file=sys.stderr)
 
 _MARKDOWN_EXTENSIONS = {'.md', '.mdown', '.markdown', '.markdn'}
 
@@ -27,6 +38,14 @@ _NOTE_TEMPLATE = """\
 
 _HOME_FILE_BASE = 'HOME.md'
 _BACKLINK = None
+
+_STOP_WORDS = {
+    'the', 'a', 'an', 'to', 'is', 'of', 'that', 'we', 'are', 'for', 'no',
+    'about', 'in', 'this', 'and', 'from', 'it', 'try', 'where', 'need',
+    'with', 'what', 'on', 'use', 'as', 'they', 'each', 'more', 'not', 'i',
+    'was', 'will', 'be', 'their', 'can', 'could', 'would', 'part', 'done',
+    'very', 'by', 'many', 'put', 'than', 'also', 'were', 'these', 'how'
+}
 
 
 def _log_duration(f):
@@ -140,6 +159,55 @@ class NotedownOpenJournalCommand(NotedownOpenCommand):
         self._notes = _find_notes_for_view(self.view)
         title = dt.datetime.today().strftime('%Y-%m-%d')
         self._open_note(title)
+
+
+class NotedownFindSimilarNotesCommand(NotedownOpenCommand):
+    '''
+    Use cosine similarity between tf-idf
+    vectors to find similar notes.
+    '''
+    def run(self, edit):
+
+        # get names and paths to notes
+        notes = _find_notes_for_view(self.view)
+        note_names = list(notes.keys())
+        note_files = [n[0][1] for n in notes.values()]
+        note_index = {n: i for i, n in enumerate(notes)}
+
+        # read and process notes into tf-idf vectors
+        model = TfidfVectorizer(input='filename', stop_words=_STOP_WORDS)
+        note_vecs = model.fit_transform(note_files).toarray()
+
+        # get name and vector of current note to use as query
+        curr_file = self.view.file_name()
+        curr_name = os.path.splitext(os.path.basename(curr_file))[0]
+        curr_vec = note_vecs[note_index[curr_name.lower()]]
+
+        # compute cosine similarity between notes
+        sim = linear_kernel(curr_vec, note_vecs)[0]
+        idx = np.argsort(-sim)
+
+        # rank the similar terms for each note
+        terms = model.get_feature_names()
+        term_sim = curr_vec*note_vecs
+        term_idx = np.argsort(-term_sim, axis=1)
+        note_terms = [
+            [terms[j] for j in t[:10] if note_vecs[i,j] > 0]
+                for i, t in enumerate(term_idx)
+        ]
+
+        sim_files = [note_files[i] for i in idx]
+        sim_menu = [
+            '{} [{:.3f}] {}'.format(
+                note_names[i], sim[i], ', '.join(note_terms[i])
+            ) for i in idx[:10]
+        ]
+
+        # show the files sorted by similarity
+        def on_done(index):
+            if index != -1: # Not canceled
+                self._open_file(sim_files[index])
+        self.view.window().show_quick_panel(sim_menu, on_done)
 
 
 class NotedownConvertFileLinksCommand(_NotedownTextCommand):
