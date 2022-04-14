@@ -198,9 +198,9 @@ class NotedownFindSimilarNotesCommand(NotedownOpenCommand):
 
         sim_files = [note_files[i] for i in idx]
         sim_menu = [
-            '{} [{:.3f}] {}'.format(
-                note_names[i], sim[i], ', '.join(note_terms[i])
-            ) for i in idx[:10]
+            '[{:.3f}] {} ({})'.format(
+                sim[i], note_names[i], ', '.join(note_terms[i])
+            ) for i in idx[:100]
         ]
 
         # show the files sorted by similarity
