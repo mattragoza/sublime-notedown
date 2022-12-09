@@ -36,8 +36,8 @@ _NOTE_TEMPLATE = """\
 
 """
 
-_HOME_FILE_BASE = 'HOME.md'
-_BACKLINK = None
+_HOME_FILE_BASE = 'README.md'
+_LAST_NOTE = None
 
 _STOP_WORDS = {
     'the', 'a', 'an', 'to', 'is', 'of', 'that', 'we', 'are', 'for', 'no',
@@ -69,26 +69,30 @@ class _NotedownTextCommand(sublime_plugin.TextCommand):
         return _viewing_a_note(self.view)
 
 
-class NotedownPasteBackLinkCommand(_NotedownTextCommand):
-
-    def is_enabled(self):
-        return super().is_enabled() and (_BACKLINK is not None)
+class NotedownPasteLinkCommand(_NotedownTextCommand):
 
     def run(self, edit):
+        link = '[[{}]]'.format(self.get_link())
         for selection in self.view.sel():
             if selection.empty():
-                self._paste_point(selection.begin())
+                self.view.insert(edit, selection.begin(), link)
             else:
-                self._paste_selection(self.view.substr(selection))
+                self.view.replace(edit, selection, link)
 
-    def _paste_point(self, point):
-        print('paste_point', point, _BACKLINK)
-        self.view.run_command(
-            'insert', {'characters': '[[{}]]'.format(_BACKLINK)}
-        )
 
-    def _paste_selection(self, text):
-        print('paste_selection', text, _BACKLINK)
+class NotedownPasteJournalLinkCommand(NotedownPasteLinkCommand):
+
+    def get_link(self):
+        return today()
+
+
+class NotedownPasteBackLinkCommand(NotedownPasteLinkCommand):
+
+    def is_visible(self):
+        return super().is_enabled() and (_LAST_NOTE is not None)
+
+    def get_link(self):
+        return _LAST_NOTE
 
 
 class NotedownOpenCommand(_NotedownTextCommand):
@@ -133,10 +137,10 @@ class NotedownOpenCommand(_NotedownTextCommand):
             self._open_file(filenames.pop())
 
         # store the backlink
-        global _BACKLINK
+        global _LAST_NOTE
         curr_file = self.view.file_name()
         curr_name = os.path.splitext(os.path.basename(curr_file))[0]
-        _BACKLINK = curr_name
+        _LAST_NOTE = curr_name
 
     def _open_file(self, filename):
         flags = (
@@ -153,12 +157,15 @@ class NotedownOpenCommand(_NotedownTextCommand):
         return self.view.substr(self.view.word(point))
 
 
+def today():
+    return dt.datetime.today().strftime('%Y-%m-%d')
+
+
 class NotedownOpenJournalCommand(NotedownOpenCommand):
 
     def run(self, edit):
         self._notes = _find_notes_for_view(self.view)
-        title = dt.datetime.today().strftime('%Y-%m-%d')
-        self._open_note(title)
+        self._open_note(today())
 
 
 class NotedownFindSimilarNotesCommand(NotedownOpenCommand):

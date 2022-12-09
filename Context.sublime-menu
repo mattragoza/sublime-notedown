@@ -8,23 +8,11 @@
         "command": "notedown_open_journal"
     },
     {
+        "caption": "Paste journal link",
+        "command": "notedown_paste_journal_link"
+    },
+    {
         "caption": "Paste backlink",
         "command": "notedown_paste_back_link"
-    },
-    {
-        "caption": "Find similar notes",
-        "command": "notedown_find_similar_notes"
-    },
-    {
-        "caption": "Clear cache",
-        "command": "notedown_clear_cache"
-    },
-    {
-        "caption": "Convert wiki links",
-        "command": "notedown_convert_wiki_links"
-    },
-    {
-        "caption": "Convert file links",
-        "command": "notedown_convert_file_links"
     }
 ]
