@@ -1,5 +1,9 @@
 [
     {
+        "caption": "Notedown: Open Note",
+        "command": "notedown_open_note"
+    },
+    {
         "caption": "Notedown: Open Link",
         "command": "notedown_open_link"
     },
