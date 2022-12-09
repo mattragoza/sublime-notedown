@@ -36,8 +36,8 @@ _NOTE_TEMPLATE = """\
 
 """
 
-_HOME_FILE_BASE = 'README.md'
-_LAST_NOTE = None
+_HOME_NAME = 'README'
+_LAST_NOTE = _HOME_NAME
 
 _STOP_WORDS = {
     'the', 'a', 'an', 'to', 'is', 'of', 'that', 'we', 'are', 'for', 'no',
@@ -65,14 +65,11 @@ class _NotedownTextCommand(sublime_plugin.TextCommand):
     def is_enabled(self):
         return _viewing_a_note(self.view)
 
-    def is_visible(self):
-        return _viewing_a_note(self.view)
-
 
 class NotedownPasteLinkCommand(_NotedownTextCommand):
 
     def run(self, edit):
-        link = '[[{}]]'.format(self.get_link())
+        link = '[[{}]]'.format(self.get_note())
         for selection in self.view.sel():
             if selection.empty():
                 self.view.insert(edit, selection.begin(), link)
@@ -82,20 +79,20 @@ class NotedownPasteLinkCommand(_NotedownTextCommand):
 
 class NotedownPasteJournalLinkCommand(NotedownPasteLinkCommand):
 
-    def get_link(self):
+    def get_note(self):
         return today()
 
 
 class NotedownPasteBackLinkCommand(NotedownPasteLinkCommand):
 
-    def is_visible(self):
-        return super().is_enabled() and (_LAST_NOTE is not None)
-
-    def get_link(self):
+    def get_note(self):
         return _LAST_NOTE
 
 
 class NotedownOpenLinkCommand(_NotedownTextCommand):
+
+    def is_enabled(self):
+        return super().is_enabled() and not all(s.empty() for s in self.view.sel())
 
     def run(self, edit):
         self._notes = _find_notes_for_view(self.view)
