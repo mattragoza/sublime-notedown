@@ -1,14 +1,10 @@
 [
     {
         "keys": ["ctrl+alt+o"],
-        "command": "notedown_open"
+        "command": "notedown_open_link"
     },
     {
         "keys": ["ctrl+alt+j"],
         "command": "notedown_open_journal"
-    },
-    {
-        "keys": ["ctrl+alt+l"],
-        "command": "notedown_link"
     }
 ]

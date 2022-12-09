@@ -95,7 +95,7 @@ class NotedownPasteBackLinkCommand(NotedownPasteLinkCommand):
         return _LAST_NOTE
 
 
-class NotedownOpenCommand(_NotedownTextCommand):
+class NotedownOpenLinkCommand(_NotedownTextCommand):
 
     def run(self, edit):
         self._notes = _find_notes_for_view(self.view)
