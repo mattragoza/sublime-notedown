@@ -20,6 +20,14 @@
         "command": "notedown_lint"
     },
     {
+        "caption": "Notedown: Convert wiki links",
+        "command": "notedown_convert_wiki_links"
+    },
+    {
+        "caption": "Notedown: Convert file links",
+        "command": "notedown_convert_file_links"
+    },
+    {
         "caption": "Notedown: Edit User Settings",
         "command": "open_file", "args":
         {

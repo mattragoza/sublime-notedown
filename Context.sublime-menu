@@ -1,5 +1,9 @@
 [
     {
+        "caption": "Open note",
+        "command": "notedown_open_note"
+    },
+    {
         "caption": "Open link",
         "command": "notedown_open_link"
     },
@@ -14,5 +18,13 @@
     {
         "caption": "Paste backlink",
         "command": "notedown_paste_back_link"
+    },
+    {
+        "caption": "Check errors",
+        "command": "notedown_check_errors"
+    },
+    {
+        "caption": "Clear cache",
+        "command": "notedown_clear_cache"
     }
 ]

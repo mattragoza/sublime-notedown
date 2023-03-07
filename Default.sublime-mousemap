@@ -1,7 +1,45 @@
 [
 	{
-		"button": "button1", "count": 1, "modifiers": ["ctrl", "alt"],
+		"button": "button1",
+		"count": 1,
+		"modifiers": ["ctrl"],
 		"press_command": "drag_select",
 		"command": "notedown_open_link"
+	},
+	{
+		"button": "button2",
+		"count": 1,
+		"modifiers": ["ctrl"],
+		"command": "notedown_toggle_focus"
+	},
+	{
+		"button": "button3",
+		"count": 1,
+		"modifiers": ["ctrl"],
+		"command": "notedown_set_primary_group"
+	},
+	{
+		"button": "scroll_down",
+		"count": 1,
+		"modifiers": ["ctrl"],
+		"command": "close"
+	},
+	{
+		"button": "scroll_up",
+		"count": 1,
+		"modifiers": ["ctrl"],
+		"command": "reopen_last_file"
+	},
+	{
+		"button": "scroll_down",
+		"count": 1,
+		"modifiers": ["ctrl", "shift"],
+		"command": "decrease_font_size"
+	},
+	{
+		"button": "scroll_up",
+		"count": 1,
+		"modifiers": ["ctrl", "shift"],
+		"command": "increase_font_size"
 	}
 ]
