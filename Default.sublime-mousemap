@@ -4,7 +4,16 @@
 		"count": 1,
 		"modifiers": ["ctrl"],
 		"press_command": "drag_select",
-		"command": "notedown_open_link"
+		"command": "notedown_open_link",
+		"args": {"primary": false},
+	},
+	{
+		"button": "button1",
+		"count": 1,
+		"modifiers": ["ctrl", "shift"],
+		"press_command": "drag_select",
+		"command": "notedown_open_link",
+		"args": {"primary": true},
 	},
 	{
 		"button": "button2",
@@ -21,25 +30,25 @@
 	{
 		"button": "scroll_down",
 		"count": 1,
-		"modifiers": ["ctrl"],
+		"modifiers": ["ctrl", "shift"],
 		"command": "close"
 	},
 	{
 		"button": "scroll_up",
 		"count": 1,
-		"modifiers": ["ctrl"],
+		"modifiers": ["ctrl", "shift"],
 		"command": "reopen_last_file"
 	},
 	{
 		"button": "scroll_down",
 		"count": 1,
-		"modifiers": ["ctrl", "shift"],
+		"modifiers": ["ctrl"],
 		"command": "decrease_font_size"
 	},
 	{
 		"button": "scroll_up",
 		"count": 1,
-		"modifiers": ["ctrl", "shift"],
+		"modifiers": ["ctrl"],
 		"command": "increase_font_size"
 	}
 ]

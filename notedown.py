@@ -16,7 +16,7 @@ WIKI_SELECTOR = 'constant.other.wikilink.markdown-wiki'
 
 NOTE_EXTS = {'.md'}
 NAME_SEP = '__'
-NOTE_TEMPLATE = '# {}\n[[{}]]\n'
+NOTE_TEMPLATE = '# {}\n[[{}]]\n\n\n'
 LINK_TEMPLATE = '[[{}]]'
 DATE_FORMAT = '%Y-%m-%d'
 
@@ -25,6 +25,16 @@ BACK_LINKS = {} # {view_id: note_name}
 
 GROUP_CACHE = {} # {sheet_id: group_id}
 PRIMARY_GROUP = 3
+
+
+def read_file(note_file):
+    with open(note_file, encoding='utf-8') as f:
+        return f.read()
+
+
+def write_file(note_file, buf):
+    with open(note_file, 'w', encoding='utf-8') as f:
+        f.write(buf)
 
 
 def today():
@@ -47,7 +57,7 @@ def find_home_file(curr_dir):
 def find_note_files(home_dir):
     curr_mod_time = os.stat(home_dir).st_mtime
     last_mod_time, notes = NOTE_CACHE.get(home_dir, (None, None))
-    if last_mod_time == curr_mod_time: # use cache
+    if notes and last_mod_time == curr_mod_time: # use cache
         print('using note cache')
         return notes
     print('refreshing note cache')
@@ -64,155 +74,21 @@ def find_note_files(home_dir):
     return notes
 
 
-def open_note_file(window, note_file):
-    flags = (
-        sublime.TRANSIENT | sublime.ADD_TO_SELECTION | sublime.REPLACE_MRU
-    )
-    window.open_file(note_file, flags, group=-1)
+def create_note_file(note_file, name, backlink):
+    assert not os.path.isfile(note_file), "File already exists"
+    print('Creating ', repr(name), repr(backlink))
+    with open(note_file, 'w') as f:
+        f.write(NOTE_TEMPLATE.format(name, backlink))
+    return note_file
+
+
+def open_note_file(window, note_file, primary=False):
+    flags = sublime.SEMI_TRANSIENT
+    flags |= sublime.REPLACE_MRU
+    flags |= sublime.CLEAR_TO_RIGHT
+    flags |= sublime.FORCE_CLONE
+    window.open_file(note_file, flags, group=PRIMARY_GROUP if primary else -1)
     return window.find_open_file(note_file)
-
-
-class NotedownCommand(sublime_plugin.TextCommand):
-    '''
-    A text command that is only enabled when
-    a markdown note is in the view.
-    '''
-    def debug(self):
-        print('\nNOTEDOWN')
-        print('curr_name = {}'.format(self.curr_name()))
-        print('curr_file = {}'.format(self.curr_file()))
-        print('curr_dir  = {}'.format(self.curr_dir()))
-        print('home_file = {}'.format(self.home_file()))
-        print('home_dir  = {}'.format(self.home_dir()))
-
-    def is_enabled(self):
-        return viewing_a_note(self.view)
-
-    def curr_file(self):
-        return self.view.file_name()
-
-    def curr_name(self):
-        return os.path.splitext(os.path.basename(self.curr_file()))[0]
-
-    def curr_dir(self):
-        return os.path.dirname(self.curr_file())
-
-    def home_file(self):
-        return find_home_file(self.curr_dir())
-
-    def home_dir(self):
-        home_file = self.home_file()
-        if home_file:
-            return os.path.dirname(home_file)
-        return self.curr_dir()
-
-    def find_all_notes(self):
-        return find_note_files(self.home_dir())
-
-    def find_note_names(self):
-        return sorted(self.find_all_notes().keys())
-
-    def find_notes_by_name(self, name):
-        return self.find_all_notes()[name.lower()]
-
-    def create_note_file(self, name):
-        note_file = os.path.join(self.curr_dir(), '{}.md'.format(name))
-        text = 'Create new note {}?'.format(note_file)
-        if not sublime.ok_cancel_dialog(text, 'Create note'):
-            return
-        try:
-            with open(note_file, 'w') as f:
-                f.write(NOTE_TEMPLATE.format(name, self.curr_name()))
-            return note_file
-        except IOError as e:
-            sublime.error_message('Failed to create {}:\n{}'.format(note_file, e))
-            return
-
-    def open_note_file(self, note_file):
-        return open_note_file(self.view.window(), note_file)
-
-    def open_note_by_name(self, name):
-        note_files = self.find_notes_by_name(name)
-
-        if len(note_files) > 1: # multiple notes match
-            def on_select(index):
-                if index != -1:
-                    view_id = self.open_note_file(note_files[index]).id()
-                    BACK_LINKS[view_id] = self.curr_name()
-            self.view.window().show_quick_panel(note_files, on_select)
-
-        elif len(note_files) == 1: # single note match
-            view_id = self.open_note_file(note_files[0]).id()
-            BACK_LINKS[view_id] = self.curr_name()
-
-        else: # create new note
-            note_file = self.create_note_file(name)
-            if note_file is not None:
-                view_id = self.open_note_file(note_file).id()
-                BACK_LINKS[view_id] = self.curr_name()
-            return note_file
-
-    def open_note(self):
-        note_names = self.find_note_names()
-        def on_select(index):
-            if index != -1:
-                self.open_note_by_name(note_names[index])
-        self.view.window().show_quick_panel(note_names, on_select)
-
-    def open_link(self, edit, selection):
-        if selection.empty():
-            selection = self.view.extract_scope(selection.begin())
-        text = self.view.substr(selection)
-
-        if self.view.match_selector(selection.begin(), URL_SELECTOR):
-            print('selected a web link: ' + repr(text))
-            webbrowser.open(url=text)
-
-        elif self.view.match_selector(selection.begin(), WIKI_SELECTOR):
-            print('selected a wiki link: ' + repr(text))
-            self.open_note_by_name(name=text)
-
-        else: # create new link
-            if self.open_note_by_name(name=text):
-                print('creating a new link: ' + repr(text))
-                self.create_link(edit, selection, name=text)
-
-    def create_link(self, edit, selection, name):
-        link = '[[{}]]'.format(name)
-        self.view.replace(edit, selection, link)
-
-    def get_head_region(self):
-        if self.view.match_selector(0, HEAD_SELECTOR):
-            return self.view.extract_scope(2)
-        return sublime.Region(0, 0)
-
-    def curr_head(self):
-        return self.view.substr(self.get_head_region())
-
-    def find_link_regions(self):
-        return self.view.find_by_selector(WIKI_SELECTOR)
-
-    def convert_wiki_links(self):
-        notes = self.find_all_notes()
-        for name, note_files in notes.items():
-            for note_file in note_files:
-                convert_wiki_links(note_file, notes)
-
-    def convert_file_links(self):
-        notes = self.find_all_notes()
-        for name, note_files in notes.items():
-            for note_file in note_files:
-                convert_file_links(note_file, notes)
-
-
-def read_file(note_file):
-    with open(note_file, encoding='utf-8') as f:
-        return f.read()
-
-
-def write_file(note_file, buf):
-    with open(note_file, 'w', encoding='utf-8') as f:
-        f.write(buf)
 
 
 def convert_wiki_links(note_file, notes):
@@ -255,68 +131,217 @@ def convert_file_link(m, notes):
         return m.group()
 
 
-class NotedownPasteLinkCommand(NotedownCommand):
+class NotedownView(object):
     '''
-    A command that pastes a link at the selection.
+    A view into a notedown file.
+    '''
+    def __init__(self, view):
+        self.view = view
+
+    def curr_file(self):
+        return self.view.file_name()
+
+    def curr_name(self):
+        return os.path.splitext(os.path.basename(self.curr_file()))[0]
+
+    def curr_dir(self):
+        return os.path.dirname(self.curr_file())
+
+    def home_file(self):
+        return find_home_file(self.curr_dir())
+
+    def home_dir(self):
+        home_file = self.home_file()
+        if home_file:
+            return os.path.dirname(home_file)
+        return self.curr_dir()
+
+    def debug(self):
+        print('\nNOTEDOWN')
+        print('curr_name = {}'.format(self.curr_name()))
+        print('curr_file = {}'.format(self.curr_file()))
+        print('curr_dir  = {}'.format(self.curr_dir()))
+        print('home_file = {}'.format(self.home_file()))
+        print('home_dir  = {}'.format(self.home_dir()))
+
+    def find_all_notes(self):
+        return find_note_files(self.home_dir())
+
+    def find_notes_by_name(self, name):
+        return self.find_all_notes()[name.lower()]
+
+    def list_all_notes(self):
+        return sorted(self.find_all_notes().keys())
+
+    def create_note_file(self, name):
+        note_file = os.path.join(self.curr_dir(), '{}.md'.format(name))
+        text = 'Create new note {}?'.format(repr(name))
+        if sublime.ok_cancel_dialog(text, 'Create note'):
+            try:
+                return create_note_file(note_file, name, self.curr_name())
+            except IOError as e:
+                sublime.error_message('Failed to create {}:\n{}'.format(note_file, e))
+
+    def open_note_file(self, note_file, primary):
+        return open_note_file(self.view.window(), note_file, primary)
+
+    def open_note_by_name(self, name, primary):
+        note_files = self.find_notes_by_name(name)
+
+        if len(note_files) > 1: # multiple notes match
+            def on_select(index):
+                if index != -1:
+                    return self.open_note_file(note_files[index], primary).id()
+            return self.view.window().show_quick_panel(note_files, on_select)
+
+        elif len(note_files) == 1: # single note match
+            return self.open_note_file(note_files[0], primary).id()
+
+        else: # create new note
+            note_file = self.create_note_file(name)
+            if note_file is not None:
+                return self.open_note_file(note_file, primary).id()
+
+    def open_note(self):
+        note_names = self.list_note_names()
+        def on_select(index):
+            if index != -1:
+                self.open_note_by_name(note_names[index], primary=False)
+        self.view.window().show_quick_panel(note_names, on_select)
+
+    def get_head_region(self):
+        if self.view.match_selector(0, HEAD_SELECTOR):
+            return self.view.extract_scope(2)
+        return sublime.Region(0, 1)
+
+    def curr_head(self):
+        return self.view.substr(self.get_head_region())
+
+    def find_link_regions(self):
+        return self.view.find_by_selector(WIKI_SELECTOR)
+
+    def convert_wiki_links(self):
+        notes = self.find_all_notes()
+        for name, note_files in notes.items():
+            for note_file in note_files:
+                convert_wiki_links(note_file, notes)
+
+    def convert_file_links(self):
+        notes = self.find_all_notes()
+        for name, note_files in notes.items():
+            for note_file in note_files:
+                convert_file_links(note_file, notes)
+
+
+class NotedownTextCommand(sublime_plugin.TextCommand):
+    '''
+    A text command that is only enabled when
+    a markdown note is in the view.
+    '''
+    def is_enabled(self):
+        return viewing_a_note(self.view)
+
+
+class NotedownOpenNoteCommand(NotedownTextCommand):
+    '''
+    A command that browses all notes and selects one to open.
+    '''
+    def run(self, edit):
+        NotedownView(self.view).open_note()
+
+
+class NotedownOpenLinkCommand(NotedownTextCommand):
+    '''
+    A command that opens a link (url or wiki).
+    '''
+    def run(self, edit, primary):
+        for selection in self.view.sel():
+            self.open_link(edit, selection, primary)
+
+    def open_link(self, edit, selection, primary):
+        if selection.empty():
+            selection = self.view.extract_scope(selection.begin())
+        link_text = self.view.substr(selection)
+
+        if self.view.match_selector(selection.begin(), URL_SELECTOR):
+            print('selected a web link: ' + repr(link_text))
+            webbrowser.open(url=link_text)
+
+        elif self.view.match_selector(selection.begin(), WIKI_SELECTOR):
+            print('selected a wiki link: ' + repr(link_text))
+            NotedownView(self.view).open_note_by_name(name=link_text, primary=primary)
+
+        else: # create a new link (if a note is opened)
+            if NotedownView(self.view).open_note_by_name(
+                name=link_text, primary=primary
+            ):
+                print('creating a new link: ' + repr(link_text))
+                self.create_link(edit, selection, name=link_text)
+
+    def create_link(self, edit, selection, name):
+        self.view.replace(edit, selection, LINK_TEMPLATE.format(name))
+
+
+class NotedownOpenJournalCommand(NotedownTextCommand):
+    '''
+    A command that opens today's journal entry.
+    '''
+    def run(self, edit):
+        NotedownView(self.view).open_note_by_name(today(), primary=True)
+
+
+class NotedownLinkToJournalCommand(NotedownTextCommand):
+    '''
+    A command that pastes a link to today's journal entry.
     '''
     def run(self, edit):
         link = LINK_TEMPLATE.format(self.link_name())
         for selection in self.view.sel():
             self.view.replace(edit, selection, link)
 
-
-class NotedownPasteJournalLinkCommand(NotedownPasteLinkCommand):
-    '''
-    A command that pastes a link to today's journal entry.
-    '''
     def link_name(self):
         return today()
 
 
-class NotedownPasteBackLinkCommand(NotedownPasteLinkCommand):
+class NotedownListBackLinksCommand(NotedownTextCommand):
     '''
-    A command that pastes a backlink, i.e. a link to the
-    note containing the link that was opened.
-    '''
-    def link_name(self):
-        return BACK_LINKS[self.view.id()]
-
-
-class NotedownOpenNoteCommand(NotedownCommand):
-    '''
-    A command that browses all notes and selects one to open.
+    A command that creates a list of links to other
+    notes that link to the current note.
     '''
     def run(self, edit):
-        self.open_note()
+        note_view = NotedownView(self.view)
+        names = note_view.curr_name().split(NAME_SEP)
+        pattern = re.compile(r'\[\[({})\]\]'.format('|'.join(names)))
+        encoding = self.view.settings().get('default_encoding', 'utf-8')
+        notes = note_view.find_all_notes()
+        note_files = {n for ns in notes.values() for n in ns}
+        back_links = []
+        for note_file in note_files:
+            with open(note_file, encoding=encoding) as f:
+                try:
+                    match = pattern.search(f.read())
+                except UnicodeEncodeError:
+                    print('{} is not {} encoded'.format(note_file, encoding))
+                    continue
+                if match:
+                    link_name = os.path.splitext(os.path.basename(note_file))[0]
+                    back_links.append(link_name)
 
-
-class NotedownOpenLinkCommand(NotedownCommand):
-    '''
-    A command that opens a link (url or wiki).
-    '''
-    def run(self, edit):
+        text = ' '.join(['[[{}]]'.format(l) for l in sorted(back_links)])
         for selection in self.view.sel():
-            self.open_link(edit, selection)
+            self.view.replace(edit, selection, text)
 
 
-class NotedownOpenJournalCommand(NotedownCommand):
-    '''
-    A command that opens today's journal entry.
-    '''
-    def run(self, edit):
-        self.open_note_by_name(name=today())
-
-
-class NotedownConvertWikiLinksCommand(NotedownCommand):
+class NotedownConvertWikiLinksCommand(NotedownTextCommand):
 
     def run(self, edit):
-        self.convert_wiki_links()
+        NotedownView(self.view).convert_wiki_links()
 
 
-class NotedownConvertFileLinksCommand(NotedownCommand):
+class NotedownConvertFileLinksCommand(NotedownTextCommand):
 
     def run(self, edit):
-        self.convert_file_links()
+        NotedownView(self.view).convert_file_links()
 
 
 class NotedownSetPrimaryGroupCommand(sublime_plugin.TextCommand):
@@ -344,7 +369,7 @@ class NotedownToggleFocusCommand(sublime_plugin.TextCommand):
         window.focus_group(PRIMARY_GROUP)
 
 
-class NotedownCheckErrorsCommand(NotedownCommand):
+class NotedownCheckErrorsCommand(NotedownTextCommand):
 
     def run(self, edit):
         errors = [] # [(description, name, region)]
@@ -354,27 +379,23 @@ class NotedownCheckErrorsCommand(NotedownCommand):
         self.highlight_errors(errors)
 
     def check_note_head(self, errors):
-        head_region = self.get_head_region()
+        note_view = NotedownView(self.view)
+        head_region = note_view.get_head_region()
         head = self.view.substr(head_region)
         if not head:
-            errors.append((
-                'Missing head', head, head_region
-            ))
+            errors.append(('Missing head', head, head_region))
             return
-        name = self.curr_name()
+        name = note_view.curr_name()
         if name != head:
-            errors.append((
-                'Heading is different from name', head, head_region
-            ))
+            errors.append(('Heading is different from name', head, head_region))
 
     def find_broken_links(self, errors):
-        notes = self.find_all_notes()
-        for link_region in self.find_link_regions():
+        note_view = NotedownView(self.view)
+        notes = note_view.find_all_notes()
+        for link_region in note_view.find_link_regions():
             link_name = self.view.substr(link_region).lower()
             if link_name not in notes:
-                errors.append((
-                    'Missing note file', link_name, link_region
-                ))
+                errors.append(('Missing note file', link_name, link_region))
 
     def goto_error(self, error):
         desc, name, region = error
@@ -405,19 +426,20 @@ class NotedownCheckErrorsCommand(NotedownCommand):
         )
 
 
-class NotedownAutoRenameCommand(NotedownCommand):
+class NotedownAutoRenameCommand(NotedownTextCommand):
 
     def run(self, edit):
         view = self.auto_rename()
         view.run_command('notedown_check_errors')
 
     def auto_rename(self):
-        name = self.curr_name()
-        head = self.curr_head()
+        note_view = NotedownView(self.view)
+        name = note_view.curr_name()
+        head = note_view.curr_head()
         if not head or name == head:
             return self.view
-        old_file = self.curr_file()
-        new_file = os.path.join(self.curr_dir(), head + '.md')
+        old_file = note_view.curr_file()
+        new_file = os.path.join(note_view.curr_dir(), head + '.md')
         text = 'Rename this file to {}?'.format(new_file)
         if not sublime.ok_cancel_dialog(text, 'Rename file'):
             return self.view
@@ -456,11 +478,11 @@ class NotedownAutoRenameCommand(NotedownCommand):
             return
 
         print('trying to update backlinks')
-        new_name = new_name.split(NAME_SEP)[0]
-        pattern = re.compile(r'\[\[({})\]\]'.format('|').join(removed_names))
+        new_name = LINK_TEMPLATE.format(new_name.split(NAME_SEP)[0])
+        pattern = re.compile(r'\[\[({})\]\]'.format('|'.join(removed_names)))
 
         updated = 0
-        notes = self.find_all_notes()
+        notes = NotedownView(self.view).find_all_notes()
         note_files = {n for ns in notes.values() for n in ns}
         print(note_files)
 
@@ -478,6 +500,10 @@ class NotedownAutoRenameCommand(NotedownCommand):
                 with open(note_file, 'w', encoding=encoding) as f:
                     f.write(text)
 
+        if updated: # clear cache
+            global NOTE_CACHE
+            NOTE_CACHE = {}
+
         return updated
 
 
@@ -486,3 +512,12 @@ class NotedownEventListener(sublime_plugin.EventListener):
     def on_post_save_async(self, view):
         if viewing_a_note(view):
             view.run_command('notedown_auto_rename')
+
+    def on_hover(self, view, point, hover_zone):
+        if viewing_a_note(view):
+            selection = view.extract_scope(point)
+            text = view.substr(selection)
+
+            if view.match_selector(selection.begin(), WIKI_SELECTOR):
+                print('hovering on wiki link: ' + repr(text))
+                view.run_command('notedown_open_link', {'primary': 0})

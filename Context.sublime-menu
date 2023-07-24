@@ -4,27 +4,15 @@
         "command": "notedown_open_note"
     },
     {
-        "caption": "Open link",
-        "command": "notedown_open_link"
-    },
-    {
         "caption": "Open journal",
         "command": "notedown_open_journal"
     },
     {
-        "caption": "Paste journal link",
-        "command": "notedown_paste_journal_link"
+        "caption": "Link to journal",
+        "command": "notedown_link_to_journal"
     },
     {
-        "caption": "Paste backlink",
-        "command": "notedown_paste_back_link"
-    },
-    {
-        "caption": "Check errors",
-        "command": "notedown_check_errors"
-    },
-    {
-        "caption": "Clear cache",
-        "command": "notedown_clear_cache"
+        "caption": "List backlinks",
+        "command": "notedown_list_back_links"
     }
 ]

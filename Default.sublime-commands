@@ -1,37 +1,38 @@
 [
     {
-        "caption": "Notedown: Open Note",
+        "caption": "Open note",
         "command": "notedown_open_note"
     },
     {
-        "caption": "Notedown: Open Link",
+        "caption": "Open link",
         "command": "notedown_open_link"
     },
     {
-        "caption": "Notedown: Open Journal",
+        "caption": "Open journal",
         "command": "notedown_open_journal"
     },
     {
-        "caption": "Notedown: Link",
-        "command": "notedown_link"
+        "caption": "Paste journal link",
+        "command": "notedown_paste_journal_link"
     },
     {
-        "caption": "Notedown: Lint",
-        "command": "notedown_lint"
+        "caption": "Paste backlink",
+        "command": "notedown_paste_back_link"
     },
     {
-        "caption": "Notedown: Convert wiki links",
+        "caption": "Convert wiki links",
         "command": "notedown_convert_wiki_links"
     },
     {
-        "caption": "Notedown: Convert file links",
+        "caption": "Convert file links",
         "command": "notedown_convert_file_links"
     },
     {
-        "caption": "Notedown: Edit User Settings",
-        "command": "open_file", "args":
-        {
-            "file": "${packages}/User/Notedown.sublime-settings"
-        }
+        "caption": "Check errors",
+        "command": "notedown_check_errors"
+    },
+    {
+        "caption": "Clear cache",
+        "command": "notedown_clear_cache"
     }
 ]
