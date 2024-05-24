@@ -20,6 +20,56 @@ NOTE_TEMPLATE = '# {}\n[[{}]]\n\n\n'
 LINK_TEMPLATE = '[[{}]]'
 DATE_FORMAT = '%Y-%m-%d'
 
+CITE_JOURNAL_TEMPLATE = '''```bibtex
+@article{name1234key,
+    title={{Journal paper}},
+    author={},
+    journal={},
+    month={},
+    day={},
+    year={},
+    volume={},
+    number={},
+    pages={--},
+    doi={},
+    abstract={},
+}
+```'''
+CITE_PREPRINT_TEMPLATE = '''```bibtex
+@article{name1234key,
+    title={{ArXiv preprint}},
+    author={},
+    year={},
+    month={},
+    day={},
+    eprint={1234.12345},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG},
+    journal={arXiv preprint: 1234.12345 [cs.LG]},
+    doi={},
+    abstract={},
+}
+```'''
+CITE_CONFERENCE_TEMPLATE = '''```bibtex
+@inproceedings{name1234key,
+    title={{Conference paper}},
+    author={},
+    booktitle={},
+    publisher={},
+    editor={},
+    month={},
+    day={},
+    year={},
+    volume={},
+    number={},
+    pages={--},
+    series={},
+    address={},
+    doi={},
+    abstract={},
+}
+```'''
+
 NOTE_CACHE = {} # {home_dir: (mod_time, {note_name: note_files})}
 BACK_LINKS = {} # {view_id: note_name}
 
@@ -202,13 +252,6 @@ class NotedownView(object):
             if note_file is not None:
                 return self.open_note_file(note_file, primary).id()
 
-    def open_note(self):
-        note_names = self.list_note_names()
-        def on_select(index):
-            if index != -1:
-                self.open_note_by_name(note_names[index], primary=False)
-        self.view.window().show_quick_panel(note_names, on_select)
-
     def get_head_region(self):
         if self.view.match_selector(0, HEAD_SELECTOR):
             return self.view.extract_scope(2)
@@ -247,7 +290,12 @@ class NotedownOpenNoteCommand(NotedownTextCommand):
     A command that browses all notes and selects one to open.
     '''
     def run(self, edit):
-        NotedownView(self.view).open_note()
+        note_view = NotedownView(self.view)
+        note_names = note_view.list_note_names()
+        def on_select(index):
+            if index != -1:
+                note_view.open_note_by_name(note_names[index], primary=False)
+        self.view.window().show_quick_panel(note_names, on_select)
 
 
 class NotedownOpenLinkCommand(NotedownTextCommand):
@@ -287,7 +335,8 @@ class NotedownOpenJournalCommand(NotedownTextCommand):
     A command that opens today's journal entry.
     '''
     def run(self, edit):
-        NotedownView(self.view).open_note_by_name(today(), primary=True)
+        note_view = NotedownView(self.view)
+        note_view.open_note_by_name(today(), primary=True)
 
 
 class NotedownLinkToJournalCommand(NotedownTextCommand):
@@ -295,12 +344,33 @@ class NotedownLinkToJournalCommand(NotedownTextCommand):
     A command that pastes a link to today's journal entry.
     '''
     def run(self, edit):
-        link = LINK_TEMPLATE.format(self.link_name())
+        link = LINK_TEMPLATE.format(today())
         for selection in self.view.sel():
             self.view.replace(edit, selection, link)
 
-    def link_name(self):
-        return today()
+
+class NotedownCiteJournalCommand(NotedownTextCommand):
+
+    def run(self, edit):
+        text = CITE_JOURNAL_TEMPLATE
+        for selection in self.view.sel():
+            self.view.replace(edit, selection, text)
+
+
+class NotedownCitePreprintCommand(NotedownTextCommand):
+
+    def run(self, edit):
+        text = CITE_PREPRINT_TEMPLATE
+        for selection in self.view.sel():
+            self.view.replace(edit, selection, text)
+
+
+class NotedownCiteConferenceCommand(NotedownTextCommand):
+
+    def run(self, edit):
+        text = CITE_CONFERENCE_TEMPLATE
+        for selection in self.view.sel():
+            self.view.replace(edit, selection, text)
 
 
 class NotedownListBackLinksCommand(NotedownTextCommand):
@@ -514,10 +584,10 @@ class NotedownEventListener(sublime_plugin.EventListener):
             view.run_command('notedown_auto_rename')
 
     def on_hover(self, view, point, hover_zone):
-        if viewing_a_note(view):
+        if viewing_a_note(view) and hover_zone == 1:
             selection = view.extract_scope(point)
-            text = view.substr(selection)
+            link_text = view.substr(selection)
 
             if view.match_selector(selection.begin(), WIKI_SELECTOR):
-                print('hovering on wiki link: ' + repr(text))
-                view.run_command('notedown_open_link', {'primary': 0})
+                print("hovering on wiki link: {}".format(repr(link_text)))
+                NotedownView(view).open_note_by_name(link_text, primary=True)

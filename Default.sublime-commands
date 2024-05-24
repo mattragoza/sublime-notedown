@@ -20,6 +20,18 @@
         "command": "notedown_paste_back_link"
     },
     {
+        "caption": "Cite journal article",
+        "command": "notedown_cite_journal"
+    },
+    {
+        "caption": "Cite arxiv preprint",
+        "command": "notedown_cite_preprint"
+    },
+    {
+        "caption": "Cite conference paper",
+        "command": "notedown_cite_conference"
+    },
+    {
         "caption": "Convert wiki links",
         "command": "notedown_convert_wiki_links"
     },
