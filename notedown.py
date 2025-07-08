@@ -72,9 +72,10 @@ CITE_CONFERENCE_TEMPLATE = '''```bibtex
 
 NOTE_CACHE = {} # {home_dir: (mod_time, {note_name: note_files})}
 BACK_LINKS = {} # {view_id: note_name}
+BACK_LINK = 'README'
 
 GROUP_CACHE = {} # {sheet_id: group_id}
-PRIMARY_GROUP = 3
+PRIMARY_GROUP = 6
 
 
 def read_file(note_file):
@@ -236,6 +237,8 @@ class NotedownView(object):
         return open_note_file(self.view.window(), note_file, primary)
 
     def open_note_by_name(self, name, primary):
+        global BACK_LINK
+        BACK_LINK = self.curr_name()
         note_files = self.find_notes_by_name(name)
 
         if len(note_files) > 1: # multiple notes match
@@ -369,6 +372,13 @@ class NotedownCiteConferenceCommand(NotedownTextCommand):
 
     def run(self, edit):
         text = CITE_CONFERENCE_TEMPLATE
+        for selection in self.view.sel():
+            self.view.replace(edit, selection, text)
+
+
+class NotedownPasteBackLinkCommand(NotedownTextCommand):
+     def run(self, edit):
+        text = LINK_TEMPLATE.format(BACK_LINK)
         for selection in self.view.sel():
             self.view.replace(edit, selection, text)
 
@@ -584,7 +594,7 @@ class NotedownEventListener(sublime_plugin.EventListener):
             view.run_command('notedown_auto_rename')
 
     def on_hover(self, view, point, hover_zone):
-        if viewing_a_note(view) and hover_zone == 1:
+        if viewing_a_note(view) and hover_zone == 1 and False:
             selection = view.extract_scope(point)
             link_text = view.substr(selection)
 

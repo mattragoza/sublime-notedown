@@ -12,6 +12,10 @@
         "command": "notedown_link_to_journal"
     },
     {
+        "caption": "Paste backlink",
+        "command": "notedown_paste_back_link"
+    },
+    {
         "caption": "List backlinks",
         "command": "notedown_list_back_links"
     }
